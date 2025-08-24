@@ -1,0 +1,96 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+    volumes:
+      - dynamodb-data:/home/dynamodblocal/data
+
+  backend:
+    build:
+      context: ./backend
+      network: host
+    ports:
+      - "8001:8001"
+    environment:
+      - AWS_REGION=us-east-1
+      - DYNAMODB_TABLE_EVENTS=ai-agent-events
+      - DYNAMODB_TABLE_METRICS=ai-agent-metrics
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - PORT=8001
+       - SEARCH_BACKEND=dynamodb
+      - OPENSEARCH_URL=http://opensearch:9200
+    depends_on:
+      - dynamodb-local
+    volumes:
+      - ./backend:/app
+    # Run with uvicorn CLI for clearer startup logs
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--log-level", "info"]
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8001/api/v1
+      - NEXT_PUBLIC_API_URL=http://localhost:8001/api/v1
+
+  opensearch:
+    image: opensearchproject/opensearch:2.13.0
+    environment:
+      - discovery.type=single-node
+      # Disable security plugin for local development (avoids password requirement)
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g
+      # Lock memory to reduce swapping
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    # vm.max_map_count must be set on the host (not in container)
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.13.0
+    environment:
+      # Disable Dashboards security plugin to avoid login when OpenSearch security is off
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+    ports:
+      - "5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  opensearch-init:
+    image: curlimages/curl:7.88.1
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    volumes:
+      - ./infrastructure/opensearch:/seed:ro
+    entrypoint: ["sh", "-c", "\
+      until curl -s http://opensearch:9200 >/dev/null; do echo waiting for opensearch; sleep 2; done; \
+      echo creating indices; \
+      curl -s -X PUT http://opensearch:9200/events-v1 -H 'Content-Type: application/json' --data-binary @/seed/events-index.json >/dev/null; \
+      curl -s -X PUT http://opensearch:9200/spans-v1 -H 'Content-Type: application/json' --data-binary @/seed/spans-index.json >/dev/null; \
+      echo seeding demo data; \
+      curl -s -H 'Content-Type: application/x-ndjson' -X POST http://opensearch:9200/events-v1/_bulk --data-binary @/seed/demo-events.ndjson >/dev/null; \
+      curl -s -H 'Content-Type: application/x-ndjson' -X POST http://opensearch:9200/spans-v1/_bulk --data-binary @/seed/demo-spans.ndjson >/dev/null; \
+      echo OpenSearch ready" ]
+
+volumes:
+  dynamodb-data:

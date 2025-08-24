@@ -1,0 +1,49 @@
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.13.0
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      # Disable security plugin for local development (avoids password requirement)
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200" # REST API
+      - "9600:9600" # Performance Analyzer
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.13.0
+    container_name: opensearch-dashboards
+    environment:
+      # Disable Dashboards security plugin to avoid login when OpenSearch security is off
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+    ports:
+      - "5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  backend:
+    environment:
+      - SEARCH_BACKEND=opensearch
+      - OPENSEARCH_URL=http://opensearch:9200
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+# Usage:
+#   1) Ensure vm.max_map_count on host: sudo sysctl -w vm.max_map_count=262144
+#   2) Bring up stack with existing services:
+#        docker-compose -f docker-compose.yml -f docker-compose.opensearch.yml up --build
+#   3) Open OpenSearch Dashboards at http://localhost:5601
+#   4) Dev-only: security disabled; do not use in production.

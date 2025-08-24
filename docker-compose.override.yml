@@ -1,0 +1,9 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      network: host
+  frontend:
+    build:
+      context: ./frontend
+      network: host

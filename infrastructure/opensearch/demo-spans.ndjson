@@ -1,0 +1,5 @@
+{"index":{}}
+{"trace_id":"trace-demo-1","span_id":"span-1","name":"conversation","start_time":"2025-01-15T10:35:22Z","end_time":"2025-01-15T10:35:28Z","status":"OK","service_name":"agent-service","@timestamp":"2025-01-15T10:35:22Z"}
+{"index":{}}
+{"trace_id":"trace-demo-1","span_id":"span-2","parent_span_id":"span-1","name":"llm.call","start_time":"2025-01-15T10:35:23Z","end_time":"2025-01-15T10:35:27Z","status":"OK","service_name":"agent-service","@timestamp":"2025-01-15T10:35:23Z"}
+

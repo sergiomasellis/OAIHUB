@@ -1,0 +1,7 @@
+{"index":{}}
+{"@timestamp":"2025-01-15T10:35:22Z","timestamp":"2025-01-15T10:35:22Z","agent_id":"agent-1","message_type":"user_message","content":"Hello","trace_id":"trace-demo-1","conversation_id":"conv-demo-1","model_used":"gpt-4o","token_count":12}
+{"index":{}}
+{"@timestamp":"2025-01-15T10:35:23Z","timestamp":"2025-01-15T10:35:23Z","agent_id":"agent-1","message_type":"agent_response","content":"Hi! How can I help?","trace_id":"trace-demo-1","conversation_id":"conv-demo-1","model_used":"gpt-4o","token_count":64,"response_time_ms":240}
+{"index":{}}
+{"@timestamp":"2025-01-15T10:36:00Z","timestamp":"2025-01-15T10:36:00Z","agent_id":"agent-2","message_type":"error","error_details":"Rate limit","trace_id":"trace-demo-2","conversation_id":"conv-demo-2","model_used":"gpt-3.5"}
+

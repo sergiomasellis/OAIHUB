@@ -1,0 +1,27 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local
+    network_mode: host
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory", "-port", "8000"]
+    volumes:
+      - dynamodb-data:/home/dynamodblocal/data
+
+  backend:
+    build:
+      context: ./backend
+      network: host
+    network_mode: host
+    environment:
+      - AWS_REGION=us-east-1
+      - DYNAMODB_TABLE_EVENTS=ai-agent-events
+      - DYNAMODB_TABLE_METRICS=ai-agent-metrics
+      - DYNAMODB_ENDPOINT=http://localhost:8000
+      - PORT=8001
+    depends_on:
+      - dynamodb-local
+    volumes:
+      - ./backend:/app
+    command: ["python", "main.py"]
+
+volumes:
+  dynamodb-data:

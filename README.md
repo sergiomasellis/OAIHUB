@@ -2,6 +2,9 @@
 
 A comprehensive monitoring and analytics platform for tracking AI agent performance, built with React, FastAPI, and DynamoDB.
 
+<img width="1895" height="933" alt="image" src="https://github.com/user-attachments/assets/d1dfaf29-b27d-4d35-a61c-774964a7c405" />
+
+
 ## Architecture
 
 - **Frontend**: React with TypeScript and Salt Design System
